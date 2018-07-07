@@ -1,0 +1,9 @@
+function int start()
+begin
+    int a;
+    a = 10;
+    repeat
+    begin
+
+    end until(a < 20);
+end

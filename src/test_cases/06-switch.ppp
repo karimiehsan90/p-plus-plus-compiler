@@ -1,0 +1,20 @@
+function int start()
+begin
+    int a;
+    a = 5;
+    switch(a) of:
+    begin
+        case 1:
+        begin
+
+        end
+        case 5:
+        begin
+
+        end
+        default:
+        begin
+
+        end
+    end
+end

@@ -1,0 +1,11 @@
+function int start()
+begin
+    int a;
+    a = 0;
+    int i;
+    for(i = 0;i < 10;)
+    begin
+        int b;
+    end
+    b = 6;
+end

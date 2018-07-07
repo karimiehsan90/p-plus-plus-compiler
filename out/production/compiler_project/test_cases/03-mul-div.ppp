@@ -1,0 +1,9 @@
+function int start()
+begin
+    int a;
+    int b;
+    int c;
+    int d;
+    int e;
+    e = a * b / c / d;
+end

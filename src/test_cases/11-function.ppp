@@ -1,0 +1,27 @@
+function int fibo(int a)
+begin
+    if( a < 2)
+    begin
+        return 1;
+    end
+    return fibo(a - 1) + fibo(a - 2);
+end
+function int test()
+begin
+    return 0;
+end
+function int test(int a)
+begin
+    return 1;
+end
+function int start()
+begin
+    int a;
+    int b;
+    int c;
+    int d;
+    int e;
+    a = fibo(10);
+    b = test();
+    c = test(1);
+end

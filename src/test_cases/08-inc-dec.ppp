@@ -1,0 +1,9 @@
+function int start()
+begin
+    int a;
+    int b;
+    b = ++a;
+    int c;
+    int d;
+    d = --c;
+end

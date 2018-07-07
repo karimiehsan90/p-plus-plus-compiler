@@ -1,0 +1,6 @@
+package code_generation;
+
+public enum  Opcode {
+    ADD,SUB,DIV,MUL,ASSIGN,AND_ARITH,MOD,OR_ARITH,XOR,EQ,NEQ,GTE,LTE,LT,GT,AND_COND,OR_COND,NOT_COND,JP,
+    BITWISE
+}

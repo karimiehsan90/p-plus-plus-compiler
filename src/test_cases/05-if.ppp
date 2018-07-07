@@ -1,0 +1,13 @@
+function int start()
+begin
+    int a;
+    a = 5;
+    if(a < 7)
+    begin
+
+    end
+    else
+    begin
+
+    end
+end

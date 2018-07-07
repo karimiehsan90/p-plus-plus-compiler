@@ -1,0 +1,5 @@
+function int start()
+begin
+    int a;
+    a = 7 & 4;
+end

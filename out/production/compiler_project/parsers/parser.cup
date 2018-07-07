@@ -1,0 +1,299 @@
+package parsers;
+import java_cup.runtime.*;
+import java.util.ArrayList;
+import ast.*;
+
+terminal id,openParen,closeParen,semiColon,extern;
+terminal openBrace,closeBrace,openCurly,closeCurly;
+terminal intTer,bool,floatTer,longTer,charTer,doubleTer,string,voidTer,auto;
+terminal record,begin,end;
+terminal constTer;
+terminal assign,comma;
+terminal returnTer,breakTer,continueTer,sizeof;
+terminal ifTer,elseTer,switchTer,of,colon,forTer,repeat,until,foreach,in,defaultTer,caseTer,ic;
+terminal notLog,MinusMinus,PlusPlus;
+terminal plus,minus,prod,div,mod,andArith,orArith,xor;
+terminal eq,neq,gte,lte,lt,gt,andLog,orLog,not;
+terminal real_const,char_const,bool_const,string_const,long_const;
+terminal divAssign,prodAssign,addAssign,subAssign,dot,function;
+
+nonterminal program,var_dcl,func_extern,struct_dcl;
+nonterminal func_dcl,extern_dcl;
+nonterminal type,arguments,argumentsTwo,block;
+nonterminal arrayIndexes;
+nonterminal var_dcls;
+nonterminal var_dcl_cnts,var_dcl_cnt,var;
+nonterminal expr,block_inner,statement,assignment,method_call,cond_statement,loop_statement;
+nonterminal variable,parameters,else_statement,var_dclQ,assign_expr,cases,const_val,binary_op;
+nonterminal arithmatic,conditional,parametersTwo,arrayFullIndexes;
+nonterminal assigns;
+
+precedence left assign;
+precedence left PlusPlus,MinusMinus;
+precedence left plus,minus,orArith,orLog,gte,lte,lt,gt;
+precedence left prod,div,andArith,andLog,eq,neq;
+precedence left mod,not,notLog;
+precedence left xor;
+precedence left openParen,closeParen;
+
+start with program;
+
+program ::= var_dcl:v program:p{:
+    ((Program)p).programInners.addFirst((ProgramInner)v);
+    RESULT = p;
+:}|func_extern:f program:p{:
+    ((Program)p).programInners.addFirst((ProgramInner)f);
+    RESULT = p;
+:}|struct_dcl:s program:p{:
+    ((Program)p).programInners.addFirst((ProgramInner)s);
+    RESULT = p;
+:}|var_dcl:v{:
+    Program p = new Program();
+    p.programInners.add((ProgramInner)v);
+    RESULT = p;
+:}|func_extern:f{:
+    Program p = new Program();
+    p.programInners.add((ProgramInner)f);
+    RESULT = p;
+:}|struct_dcl:s{:
+    Program p = new Program();
+    p.programInners.add((ProgramInner)s);
+    RESULT = p;
+:};
+func_extern ::= func_dcl:f{:RESULT = f;:}|extern_dcl:e{:RESULT = e;:};
+func_dcl ::= function type:t id:i openParen arguments:as closeParen semiColon{:
+    Function f = new Function();
+    i = new ID((String)i);
+    OpenParen openParen = new OpenParen();
+    CloseParen closeParen = new CloseParen();
+    SemiColon semiColon = new SemiColon();
+    RESULT = new FunctionDec(f,(Type)t,(ID)i,openParen,(Arguments)as,closeParen,semiColon);
+:}|function type:t id:i openParen arguments:as closeParen block:b{:
+    Function f = new Function();
+    i = new ID((String)i);
+    OpenParen openParen = new OpenParen();
+    CloseParen closeParen = new CloseParen();
+    RESULT = new FunctionDec(f,(Type)t,(ID)i,openParen,(Arguments)as,closeParen,(Block)b);
+:};
+extern_dcl ::= extern type:t id:i semiColon{:
+    Extern e = new Extern();
+    i = new ID((String)i);
+    SemiColon semiColon = new SemiColon();
+    RESULT = new ExternDec(e,(Type)t,(ID)i,semiColon);
+:};
+arguments ::= type:t id:i arrayIndexes:a argumentsTwo:as{:
+    i = new ID((String)i);
+    Arguments as1 = (Arguments)as;
+    Argument argument = new Argument((Type)t,(ID)i,(ArrayIndexList)a);
+    ((Arguments)as).addFirst(argument);
+    RESULT = as;
+:}|{:
+    RESULT = new Arguments();
+:};
+argumentsTwo ::= comma type:t id:i arrayIndexes:a argumentsTwo:as{:
+    i = new ID((String)i);
+    Argument argument = new Argument((Type)t,(ID)i,(ArrayIndexList)a);
+    ((Arguments)as).addFirst(argument);
+    RESULT = as;
+:}|{:
+    RESULT = new Arguments();
+:};
+type ::= intTer{:RESULT = new IntTer();:}
+|bool{:RESULT = new BoolTer();:}|floatTer{:RESULT = new FloatTer();:}|id:i{:RESULT = new ID((String)i);:}|
+longTer{:RESULT = new LongTer();:}|charTer{:RESULT = new CharTer();:}|doubleTer{:RESULT = new DoubleTer();:}|
+string{:RESULT = new StringTer();:}|voidTer{:RESULT = new VoidTer();:}|auto{:RESULT = new AutoTer();:};
+struct_dcl ::= record id:i begin var_dcls:v end record semiColon{:
+    Record r = new Record();
+    i = new ID((String)i);
+    Begin b = new Begin();
+    End e = new End();
+    Record r1 = new Record();
+    SemiColon semiColon = new SemiColon();
+    RESULT = new StructDec(r,(ID)i,b,(VarDclList)v,e,r1,semiColon);
+:};
+var_dcls ::= var_dcl:v var_dcls:vs{:
+    ((VarDclList)vs).addFirst((VarDcl)v);
+    RESULT = vs;
+:}|var_dcl:v{:
+    VarDclList vs = new VarDclList();
+    vs.add((VarDcl)v);
+    RESULT = vs;
+:};
+var_dcl ::= constTer type:t var_dcl_cnts:v semiColon{:
+    ConstTer c = new ConstTer();
+    SemiColon s = new SemiColon();
+    RESULT = new VarDcl(c,(Type)t,(VarDclCnts)v,s);
+:}|type:t var_dcl_cnts:vs semiColon{:
+    SemiColon semiColon = new SemiColon();
+    RESULT = new VarDcl((Type)t,(VarDclCnts)vs,semiColon);
+:};
+var_dcl_cnts ::= var_dcl_cnt:v comma var_dcl_cnts:vs{:
+    ((VarDclCnts)vs).addFirst((VarDclCnt)v);
+    RESULT = vs;
+:}|var_dcl_cnt:v{:
+    VarDclCnts varDclCnts = new VarDclCnts();
+    varDclCnts.add((VarDclCnt)v);
+    RESULT = varDclCnts;
+:};
+var_dcl_cnt ::= var:v{:
+    RESULT = new VarDclCnt((Variable)v);
+:}|var:v assign:a expr:e{:
+    RESULT = new VarDclCnt((Variable)v,new Assign(),(Expr)e);
+:};
+var ::= id:i arrayIndexes:a{:
+    i = new ID((String)i);
+    RESULT = new IDVariable((ID)i,(ArrayIndexList)a);
+:};
+arrayIndexes ::= openBrace expr:e closeBrace arrayIndexes:as{:
+    OpenBrace openBrace = new OpenBrace();
+    CloseBrace closeBrace = new CloseBrace();
+    ((ArrayIndexList)as).addFirst(new ArrayIndex(openBrace,(Expr)e,closeBrace));
+    RESULT = as;
+:}|{:
+    RESULT = new ArrayIndexList();
+:};
+arrayFullIndexes ::= openBrace expr:e closeBrace arrayFullIndexes:as{:
+    OpenBrace openBrace = new OpenBrace();
+    CloseBrace closeBrace = new CloseBrace();
+    ((ArrayIndexList)as).addFirst(new ArrayIndex(openBrace,(Expr)e,closeBrace));
+    RESULT = as;
+:}|{:
+    RESULT = new ArrayIndexList();
+:};
+block ::= begin block_inner:b end{:
+    RESULT = new Block(new Begin(),(BlockInnerList)b,new End());
+:};
+block_inner ::= var_dcl:v block_inner:b{:
+    ((BlockInnerList)b).addFirst((VarDcl)v);
+    RESULT = b;
+:}|statement:s block_inner:b{:
+    ((BlockInnerList)b).addFirst((Statement)s);
+    RESULT = b;
+:}|{:
+    RESULT = new BlockInnerList();
+:};
+statement ::= assignment:a semiColon{:
+    RESULT = new AssignmentStatement((Assignment)a,new SemiColon());
+:}|method_call:m semiColon{:
+    RESULT = new MethodCallStatement((MethodCall)m,new SemiColon());
+:}|cond_statement:c{:RESULT = c;:}|loop_statement:l{:RESULT = l;:}|returnTer expr:e semiColon{:
+    RESULT = new ReturnStatement(new Return(),(Expr)e,new SemiColon());
+:}|returnTer semiColon{:
+    RESULT = new ReturnStatement(new Return(),new SemiColon());
+:}|
+breakTer semiColon{:RESULT = new BreakStatement(new Break(),new SemiColon());:}|continueTer semiColon{:
+    RESULT = new ContinueStatement(new Continue(),new SemiColon());
+:};
+assignment ::= variable:v assigns:a expr:e{:
+    RESULT = new Assignment((Variable)v,(AssignOpr)a,(Expr)e);
+:};
+method_call ::= id:i openParen parameters:ps closeParen{:
+    RESULT = new MethodCall(new ID((String)i),new OpenParen(),(Parameters)ps,new CloseParen());
+:};
+parameters ::= {:RESULT = new Parameters();:}|expr:e parametersTwo:p{:
+    ((Parameters)p).addFirst((Expr)e);
+    RESULT = p;
+:};
+parametersTwo ::= comma expr:e parametersTwo:p{:
+    ((Parameters)p).addFirst((Expr)e);
+    RESULT = p;
+:}|{:RESULT = new Parameters();:};
+cond_statement ::= ifTer openParen expr:e closeParen block:b{:
+    If aIf = new If();
+    OpenParen openParen = new OpenParen();
+    CloseParen closeParen = new CloseParen();
+    RESULT = new IfStatement(aIf,openParen,(Expr)e,closeParen,(Block)b);
+:}|ifTer openParen expr:e closeParen block:b else_statement:el{:
+    If aIf = new If();
+    OpenParen openParen = new OpenParen();
+    CloseParen closeParen = new CloseParen();
+    RESULT = new IfStatement(aIf,openParen,(Expr)e,closeParen,(Block)b,(ElseStatement)el);
+:}|switchTer openParen id:i closeParen of colon begin cases:c defaultTer colon block:b end{:
+    Switch switchTer = new Switch();
+    OpenParen openParen = new OpenParen();
+    i = new ID((String)i);
+    CloseParen closeParen = new CloseParen();
+    Of of = new Of();
+    Colon colon = new Colon();
+    Begin begin = new Begin();
+    Default defaultTer = new Default();
+    Colon c2 = new Colon();
+    DefaultStatement ds = new DefaultStatement(defaultTer,c2,(Block)b);
+    End end = new End();
+    SwitchStatement s = new SwitchStatement(switchTer,openParen,(ID)i,closeParen,of,colon,begin,(CaseList)c,ds,end);
+    RESULT = s;
+:};
+loop_statement ::= forTer openParen var_dclQ:v semiColon expr:e semiColon assign_expr:ae closeParen block:b{:
+    For forTer = new For();
+    OpenParen openParen = new OpenParen();
+    SemiColon semiColon = new SemiColon();
+    SemiColon semiColon1 = new SemiColon();
+    CloseParen closeParen = new CloseParen();
+    RESULT = new ForStatement(forTer,openParen,(Assignment)v,semiColon,(Expr)e,semiColon1,(UpdateStatement)ae,
+    closeParen,(Block)b);
+:}|repeat block:b until openParen expr:e closeParen semiColon{:
+    Repeat repeat = new Repeat();
+    Until until = new Until();
+    OpenParen openParen = new OpenParen();
+    CloseParen closeParen = new CloseParen();
+    SemiColon semiColon = new SemiColon();
+    RESULT = new RepeatStatement(repeat,(Block)b,until,openParen,(Expr)e,closeParen,semiColon);
+:}|foreach openParen id:i1 in id:i2 closeParen block:b{:
+    Foreach foreach = new Foreach();
+    OpenParen openParen = new OpenParen();
+    i1 = new ID((String)i1);
+    In in = new In();
+    i2 = new ID((String)i2);
+    CloseParen closeParen = new CloseParen();
+    RESULT = new ForeachStatement(foreach,openParen,(ID)i1,in,(ID)i2,closeParen,(Block)b);
+:};
+assign_expr ::= assignment:a {:RESULT = a;:} | expr:e {:RESULT = e;:}|;
+var_dclQ ::= assignment:a{:RESULT = a;:}|;
+cases ::= caseTer ic:i colon block:b cases:c{:
+    Case caseTer = new Case();
+    i = new IntConst((String)i);
+    Colon colon = new Colon();
+    CaseStatement cs = new CaseStatement(caseTer,(IntConst)i,colon,(Block)b);
+    ((CaseList)c).addFirst(cs);
+    RESULT = c;
+:}|{:RESULT = new CaseList();:};
+expr ::= expr:e1 binary_op:b expr:e2{:
+    RESULT = new BinaryExpr((Expr)e1,(BinaryOperator)b,(Expr)e2);
+:}|openParen expr:e closeParen{:
+    RESULT = new ParenthisOperation(new OpenParen(),(Expr)e,new CloseParen());
+:}|method_call:m{:RESULT = m;:}|variable:v{:
+    RESULT = v;
+:}|const_val:c{:RESULT = c;:}|minus expr:e{:
+    RESULT = new MinusExpr(new Minus(),(Expr)e);
+:}|not expr:e{:RESULT = new BitwiseExpr(new Bitwise(),(Expr)e);:}|sizeof openParen type:t closeParen{:
+    RESULT = new SizeofExpr(new Sizeof(),new OpenParen(),(Type)t,new CloseParen());
+:};
+variable ::= id:i arrayFullIndexes:a{:
+    RESULT = new IDVariable(new ID((String)i),(ArrayIndexList)a);
+:}|MinusMinus variable:v{:
+    RESULT = new PreDecreamentVariable(new MinusMinus(),(Variable)v);
+:}|PlusPlus variable:v{:
+    RESULT = new PreIncreamentVariable(new PlusPlus(),(Variable)v);
+:}|variable:v MinusMinus{:
+    RESULT = new PostDecreamentVariable((Variable)v,new MinusMinus());
+:}|variable:v PlusPlus{:
+    RESULT = new PostIncreamentVariable((Variable)v,new PlusPlus());
+:}|variable:v dot id:i{:
+    RESULT = new ObjectVariable((Variable)v,new Dot(),new ID((String)i));
+:};
+binary_op ::= arithmatic:a{:RESULT=a;:}|conditional:c{:RESULT=c;:};
+arithmatic ::= plus{:RESULT = new Plus();:}|minus{:RESULT = new Minus();:}|prod{:RESULT = new Prod();:}|
+div{:RESULT = new Div();:}|mod{:RESULT = new Mod();:}|andArith{:RESULT = new AndArith();:}|orArith{:RESULT = new OrArith();:}|xor{:
+RESULT = new Xor();:};
+conditional ::= eq{:RESULT = new Equal();:}|neq{:RESULT = new NotEqual();:}|gte{:RESULT = new GreaterThanEqual();:}|
+lte{:RESULT = new LessThanEqual();:}|lt{:RESULT = new LessThan();:}|gt{:RESULT = new GreaterThan();:}|
+andLog{:RESULT = new AndCond();:}|orLog{:RESULT = new OrCond();:}|notLog{:RESULT = new NotCond();:};
+const_val ::= ic:i{:RESULT = new IntConst((String)i);:}|real_const:r{:RESULT = new RealConst((String)r);:}|
+char_const:c{:RESULT = new CharConst((String)c);:}|bool_const:b{:RESULT = new BoolConst((String)b);:}|
+string_const:s{:RESULT = new StringConst((String)s);:}|long_const:l{:RESULT = new LongConst((String)l);:};
+else_statement ::= elseTer block:b{:
+    ElseStatement e = new ElseStatement(new Else(),(Block)b);
+    RESULT = e;
+:};
+assigns ::= assign{:RESULT = new Assign();:}|addAssign{:RESULT = new AddAssign();:}|
+subAssign{:RESULT = new SubAssign();:}|prodAssign{:RESULT = new ProdAssign();:}|divAssign{:RESULT = new DivAssign();:};
